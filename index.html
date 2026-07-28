@@ -3,77 +3,182 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EduApp</title>
-    <!-- Подключаем Telegram WebApp SDK -->
+    <title>ЦЭ Русский Язык | Подготовка</title>
     <script src="https://telegram.org"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: var(--tg-theme-bg-color, #ffffff);
-            color: var(--tg-theme-text-color, #000000);
-            margin: 0; padding: 20px; box-sizing: border-box;
+        :root {
+            --bg: var(--tg-theme-bg-color, #ffffff);
+            --text: var(--tg-theme-text-color, #000000);
+            --card-bg: var(--tg-theme-secondary-bg-color, #f5f5f7);
+            --accent: var(--tg-theme-button-color, #2481cc);
+            --accent-text: var(--tg-theme-button-text-color, #ffffff);
         }
-        .card {
-            background-color: var(--tg-theme-secondary-bg-color, #f0f0f0);
-            padding: 15px; border-radius: 12px; margin-bottom: 15px;
-        }
-        .btn {
-            background-color: var(--tg-theme-button-color, #2481cc);
-            color: var(--tg-theme-button-text-color, #ffffff);
-            border: none; padding: 12px; width: 100%;
-            border-radius: 8px; font-size: 16px; cursor: pointer;
-        }
-        .badge { font-weight: bold; color: #2481cc; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 16px; }
+        .card { background-color: var(--card-bg); padding: 16px; border-radius: 14px; margin-bottom: 16px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .stat-box { background: rgba(0,0,0,0.03); padding: 10px; border-radius: 8px; text-align: center; }
+        .badge { font-size: 20px; font-weight: bold; color: var(--accent); display: block; margin-top: 4px; }
+        .q-title { font-weight: bold; margin-bottom: 12px; font-size: 16px; line-height: 1.4; }
+        .option { display: block; background: var(--bg); padding: 12px; margin-bottom: 8px; border: 1px solid rgba(0,0,0,0.1); border-radius: 8px; cursor: pointer; transition: 0.2s; }
+        .option:hover { border-color: var(--accent); }
+        .option input { margin-right: 10px; }
+        .btn { background-color: var(--accent); color: var(--accent-text); border: none; padding: 14px; width: 100%; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .progress { font-size: 14px; color: gray; margin-bottom: 10px; text-align: right; }
     </style>
 </head>
 <body>
 
     <h2>Привет, <span id="username">Ученик</span>! 👋</h2>
 
-    <!-- Блок статистики -->
+    <!-- ПАНЕЛЬ СТАТИСТИКИ И ИИ-ПРОГНОЗА -->
     <div class="card">
-        <h3>📊 Твоя статистика</h3>
-        <p>Выполнено тестов: <span class="badge">12/15</span></p>
-        <p>Средний балл: <span class="badge">78/100</span></p>
-        <p>🔮 Прогноз ИИ на экзамен: <span class="badge" style="color: #4CAF50;">82 балла</span></p>
+        <h3 style="margin-top:0;">📊 Твой профиль ЦЭ</h3>
+        <div class="stats-grid">
+            <div class="stat-box">Решено вопросов<span class="badge" id="stat-count">0</span></div>
+            <div class="stat-box">Успешность<span class="badge" id="stat-percent">0%</span></div>
+        </div>
+        <div style="margin-top: 12px; padding: 10px; background: rgba(76, 175, 80, 0.1); border-radius: 8px; text-align: center; border: 1px solid #4CAF50;">
+            🔮 <b>Прогноз ИИ на ЦЭ:</b> <span id="ai-prediction" style="color: #4CAF50; font-size: 22px; font-weight: bold;">--</span> из 100 баллов
+        </div>
     </div>
 
-    <!-- Блок теста -->
-    <div class="card">
-        <h3>📝 Текущее задание</h3>
-        <p><b>Вопрос:</b> Какая функция в Python используется для вывода данных?</p>
-        <input type="radio" id="q1" name="python_quiz"> <label for="q1">input()</label><br><br>
-        <input type="radio" id="q2" name="python_quiz"> <label for="q2">print()</label><br><br>
-        <input type="radio" id="q3" name="python_quiz"> <label for="q3">def()</label>
+    <!-- БЛОК ТЕСТИРОВАНИЯ -->
+    <div class="card" id="quiz-container">
+        <div class="progress" id="quiz-progress">Вопрос 1 из 3</div>
+        <div class="q-title" id="question-text">Загрузка вопроса...</div>
+        <div id="options-container"></div>
+        <button class="btn" id="next-btn" onclick="handleNext()">Далее</button>
     </div>
-
-    <button class="btn" id="sendData">Отправить ответ</button>
 
     <script>
-        // Инициализируем Telegram WebApp
         const tg = window.Telegram.WebApp;
-        tg.ready(); // Сообщаем TG, что приложение готово
-        tg.expand(); // Разворачиваем на весь экран
+        tg.ready();
+        tg.expand();
 
-        // Берем имя пользователя из Telegram
         if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
             document.getElementById('username').innerText = tg.initDataUnsafe.user.first_name;
         }
 
-        // Логика кнопки отправки данных обратно в бота
-        document.getElementById('sendData').addEventListener('click', () => {
-            const isCorrect = document.getElementById('q2').checked;
+        // БАНК ВОПРОСОВ ПО РУССКОМУ ЯЗЫКУ ДЛЯ ЦЭ
+        const quizData = [
+            {
+                id: 1,
+                question: "В каком ряду во всех словах пропущена буква О?\n1) выр..щенный, р..сток\n2) прик..сновение, з..рница\n3) изл..жение, заг..рать\n4) пл..вучесть, м..кать (в чай)",
+                options: ["Ряд 1", "Ряд 2", "Ряд 3", "Ряд 4"],
+                correct: 2 // Изложение, загорать (буква О в корнях лаг/лож и гор/гар под ударением/без)
+            },
+            {
+                id: 2,
+                question: "Укажите слово, в котором пишется НН:",
+                options: ["гуси..ый", "кожа..ый", "подли..ый", "ветре..ый (день)"],
+                correct: 2 // подлинный (корень подлин + суффикс н)
+            },
+            {
+                id: 3,
+                question: "В каком варианте ответа правильно указаны все цифры, на месте которых должны стоять запятые?\n«Она шла по улице (1) не обращая внимания на прохожих (2) и (3) бережно прижимая к груди (4) полученный пакет».",
+                options: ["1, 2, 3", "1, 4", "1, 2", "1"],
+                correct: 3 // 1 и 2 выделяют первое деепричастие, союз "и" соединяет однородные деепричастные обороты
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let userAnswers = {}; // Хранение ответов: {question_id: "correct"/"wrong"}
+        let correctCount = 0;
+
+        // Инициализация локальной сессии
+        function loadQuestion() {
+            if (currentQuestionIndex >= quizData.length) {
+                finishQuiz();
+                return;
+            }
+
+            const currentQuestion = quizData[currentQuestionIndex];
+            document.getElementById('quiz-progress').innerText = `Вопрос ${currentQuestionIndex + 1} из ${quizData.length}`;
+            document.getElementById('question-text').innerText = currentQuestion.question;
             
-            // Данные, которые уйдут боту в чат
-            const resultData = {
-                topic: "Python итерация 1",
-                score: isCorrect ? 100 : 0
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+
+            currentQuestion.options.forEach((option, index) => {
+                const label = document.createElement('label');
+                label.className = 'option';
+                label.innerHTML = `<input type="radio" name="quiz_opt" value="${index}"> ${option}`;
+                optionsContainer.appendChild(label);
+            });
+            
+            if (currentQuestionIndex === quizData.length - 1) {
+                document.getElementById('next-btn').innerText = "Завершить и отправить";
+            }
+        }
+
+        function handleNext() {
+            const selected = document.querySelector('input[name="quiz_opt"]:checked');
+            if (!selected) {
+                alert("Пожалуйста, выберите вариант ответа!");
+                return;
+            }
+
+            const answerIndex = parseInt(selected.value);
+            const currentQuestion = quizData[currentQuestionIndex];
+            
+            // Проверка правильности
+            if (answerIndex === currentQuestion.correct) {
+                userAnswers[currentQuestion.id] = "correct";
+                correctCount++;
+            } else {
+                userAnswers[currentQuestion.id] = "wrong";
+            }
+
+            // Пересчет аналитики в реальном времени ("ИИ")
+            updateStatsUI();
+
+            currentQuestionIndex++;
+            loadQuestion();
+        }
+
+        // Умный алгоритм пересчета прогноза (Перевод первичных баллов в тестовые по шкале ЦЭ)
+        function updateStatsUI() {
+            const totalAnswered = currentQuestionIndex + 1;
+            const successRate = Math.round((correctCount / totalAnswered) * 100);
+
+            document.getElementById('stat-count').innerText = totalAnswered;
+            document.getElementById('stat-percent').innerText = `${successRate}%`;
+
+            // Математическая модель прогнозирования ЦЭ на основе процента правильных ответов
+            let predictedScore = 0;
+            if (successRate > 0) {
+                // Имитируем нелинейную шкалу ЦЭ Республики Беларусь
+                if (successRate === 100) predictedScore = 100;
+                else if (successRate >= 90) predictedScore = Math.round(75 + (successRate - 90) * 2.3);
+                else if (successRate >= 50) predictedScore = Math.round(30 + (successRate - 50) * 1.12);
+                else predictedScore = Math.round(successRate * 0.6);
+            }
+            
+            document.getElementById('ai-prediction').innerText = predictedScore;
+        }
+
+        function finishQuiz() {
+            document.getElementById('quiz-container').innerHTML = `
+                <h3 style="text-align:center; color:#4CAF50;">🎉 Тест завершен!</h3>
+                <p style="text-align:center;">Данные отправляются преподавателю в чат...</p>
+            `;
+
+            // Пакет данных для передачи серверному боту
+            const payload = {
+                total: quizData.length,
+                correct: correctCount,
+                answers: userAnswers
             };
 
-            // Отправляем данные текстом и закрываем окно
-            tg.sendData(JSON.stringify(resultData));
-            tg.close();
-        });
+            // Отправка боту
+            setTimeout(() => {
+                tg.sendData(JSON.stringify(payload));
+                tg.close();
+            }, 1500);
+        }
+
+        // Первый запуск
+        loadQuestion();
     </script>
 </body>
 </html>
