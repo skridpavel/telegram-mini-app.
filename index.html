@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduApp</title>
+    <!-- Подключаем Telegram WebApp SDK -->
+    <script src="https://telegram.org"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+            margin: 0; padding: 20px; box-sizing: border-box;
+        }
+        .card {
+            background-color: var(--tg-theme-secondary-bg-color, #f0f0f0);
+            padding: 15px; border-radius: 12px; margin-bottom: 15px;
+        }
+        .btn {
+            background-color: var(--tg-theme-button-color, #2481cc);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            border: none; padding: 12px; width: 100%;
+            border-radius: 8px; font-size: 16px; cursor: pointer;
+        }
+        .badge { font-weight: bold; color: #2481cc; }
+    </style>
+</head>
+<body>
+
+    <h2>Привет, <span id="username">Ученик</span>! 👋</h2>
+
+    <!-- Блок статистики -->
+    <div class="card">
+        <h3>📊 Твоя статистика</h3>
+        <p>Выполнено тестов: <span class="badge">12/15</span></p>
+        <p>Средний балл: <span class="badge">78/100</span></p>
+        <p>🔮 Прогноз ИИ на экзамен: <span class="badge" style="color: #4CAF50;">82 балла</span></p>
+    </div>
+
+    <!-- Блок теста -->
+    <div class="card">
+        <h3>📝 Текущее задание</h3>
+        <p><b>Вопрос:</b> Какая функция в Python используется для вывода данных?</p>
+        <input type="radio" id="q1" name="python_quiz"> <label for="q1">input()</label><br><br>
+        <input type="radio" id="q2" name="python_quiz"> <label for="q2">print()</label><br><br>
+        <input type="radio" id="q3" name="python_quiz"> <label for="q3">def()</label>
+    </div>
+
+    <button class="btn" id="sendData">Отправить ответ</button>
+
+    <script>
+        // Инициализируем Telegram WebApp
+        const tg = window.Telegram.WebApp;
+        tg.ready(); // Сообщаем TG, что приложение готово
+        tg.expand(); // Разворачиваем на весь экран
+
+        // Берем имя пользователя из Telegram
+        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+            document.getElementById('username').innerText = tg.initDataUnsafe.user.first_name;
+        }
+
+        // Логика кнопки отправки данных обратно в бота
+        document.getElementById('sendData').addEventListener('click', () => {
+            const isCorrect = document.getElementById('q2').checked;
+            
+            // Данные, которые уйдут боту в чат
+            const resultData = {
+                topic: "Python итерация 1",
+                score: isCorrect ? 100 : 0
+            };
+
+            // Отправляем данные текстом и закрываем окно
+            tg.sendData(JSON.stringify(resultData));
+            tg.close();
+        });
+    </script>
+</body>
+</html>
