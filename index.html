@@ -37,7 +37,7 @@
     <div class="card">
         <h3 style="margin: 0; font-size: 16px; color: #8e8e93; text-transform: uppercase;">Профиль успеваемости</h3>
         <div class="stats-grid">
-            <div class="stat-box">Решено<span class="badge" id="stat-count">0 / 15</span></div>
+            <div class="stat-box">Решено<span class="badge" id="stat-count">0 / 10</span></div>
             <div class="stat-box">Точность<span class="badge" id="stat-percent">0%</span></div>
         </div>
         <div class="ai-banner">
@@ -46,7 +46,7 @@
         </div>
     </div>
     <div class="card" id="quiz-container">
-        <div class="progress-text"><span id="current-part-label">Часть А</span><span id="quiz-progress-text">Вопрос 1 из 15</span></div>
+        <div class="progress-text"><span id="current-part-label">Часть А</span><span id="quiz-progress-text">Вопрос 1 из 10</span></div>
         <div class="progress-bar-container"><div class="progress-bar" id="progress-bar"></div></div>
         <div class="q-title" id="question-text">Загрузка...</div>
         <div id="options-container"></div>
@@ -59,21 +59,15 @@
     if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
         document.getElementById('username').innerText = tg.initDataUnsafe.user.first_name;
     }
-
     const rawQuestionBank = [
         { q: "В каком ряду во всех словах пропущена буква О?\n1) выр..щенный, р..сток\n2) прик..сновение, з..рница\n3) изл..жение, заг..рать\n4) пл..вучесть", opts: ["Ряд 1", "Ряд 2", "Ряд 3", "Ряд 4"], c: 2, r: "В излОжение (перед Ж) и загОрать (без ударения) пишется О." },
         { q: "Укажите слово, в котором пишется НН:", opts: ["гуси..ый", "кожа..ый", "подли..ый", "ветре..ый"], c: 2, r: "ПодлиННый образовано от основы на Н + суффикс Н." },
         { q: "В каком слове пишется буква И?", opts: ["пр..одолеть", "пр..интересный", "пр..вокзальный", "пр..рвать"], c: 2, r: "ПрИвокзальный указывает на близость и примыкание." },
         { q: "Выберите слово, где на месте пропуска пишется Ь:", opts: ["инъекц..я", "сэконом..ть", "под..ём", "с..ежился"], c: 1, r: "СэкономИть — на конце глаголов инфинитива пишется Ь." },
         { q: "В каком слове на конце пишется буква О?", opts: ["сначал..", "издавн..", "досух..", "направ.."], c: 3, r: "НаправО — с приставками за-, на-, в- пишется суффикс -О." },
-        { q: "Укажите слово с разделительным Ъ:", opts: ["в..юга", "об..явление", "солов..и", "л..ется"], c: 1, r: "ОбЪявление — после приставки на согласную перед буквами е, ё, ю, я." },
-        { q: "В каком слове пропущена буква Е?", opts: ["нож..вка", "реч..нка", "сыноч..к", "медвеж..нок"], c: 2, r: "СыночЕк — при склонении гласная выпадает (сыночка)." },
-        { q: "В каком ряду во всех словах пишется И?", opts: ["станц..я, ц..ган", "ц..ркуль, милиц..я", "ц..пленок, ц..фра", "лисиц..н"], c: 1, r: "ЦIркуль (в корне) и милицИя (слова на -ция) пишутся с И." },
-        { q: "Укажите слово, которое пишется СЛИТНО:", opts: ["(пол)лимона", "(пол)Москвы", "(пол)яблока", "(пол)комнаты"], c: 3, r: "Полкомнаты пишется слитно, так как начинается с согласной (кроме Л)." },
-        { q: "В каком слове пишется буква Е?", opts: ["увид..л", "ла..л", "та..л", "кле..л"], c: 0, r: "УвидЕл — гласная сохраняется из инфинитива (увидеть)." }
+        { q: "Укажите слово с разделительным Ъ:", opts: ["в..юga", "об..явление", "солов..и", "л..ется"], c: 1, r: "ОбЪявление — после приставки на согласную перед буквами е, ё, ю, я." }
     ];
-
-    const quizData = rawQuestionBank.sort(() => Math.random() - 0.5).slice(0, 10);
+    const quizData = rawQuestionBank.sort(() => Math.random() - 0.5).slice(0, 5);
     let currentQuestionIndex = 0; let correctCount = 0;
     let isAnswerChecked = false; let userAnswersReport = {};
     function loadQuestion() {
@@ -83,7 +77,7 @@
         actionBtn.innerText = "Проверить ответ";
         if (currentQuestionIndex >= quizData.length) { finishQuiz(); return; }
         const currentQuestion = quizData[currentQuestionIndex];
-        document.getElementById('current-part-label').innerText = currentQuestionIndex < 7 ? "Часть А" : "Часть В";
+        document.getElementById('current-part-label').innerText = currentQuestionIndex < 3 ? "Часть А" : "Часть В";
         document.getElementById('quiz-progress-text').innerText = `Вопрос ${currentQuestionIndex + 1} из ${quizData.length}`;
         const progressPercent = (currentQuestionIndex / quizData.length) * 100;
         document.getElementById('progress-bar').style.width = `${progressPercent}%`;
@@ -135,9 +129,15 @@
 
     function finishQuiz() {
         document.getElementById('progress-bar').style.width = `100%`;
-        document.getElementById('quiz-container').innerHTML = `<div style="text-align:center; padding: 20px 0;"><h3>🎉 Тест завершен!</h3><p>Правильно: <b>${correctCount} из ${quizData.length}</b></p></div>`;
-        const payload = { total: quizData.length, correct: correctCount, answers: userAnswersReport };
-        setTimeout(() => { tg.sendData(JSON.stringify(payload)); tg.close(); }, 2500);
+        document.getElementById('quiz-container').innerHTML = `
+            <div style="text-align:center; padding: 20px 0;">
+                <h3>🎉 Тест завершен!</h3>
+                <p>Правильно: <b>${correctCount} из ${quizData.length}</b></p>
+                <p style="font-size:12px; color:gray;">Окно закроется автоматически...</p>
+            </div>`;
+        if (typeof tg !== 'undefined' && tg.close) {
+            setTimeout(() => { tg.close(); }, 3000);
+        }
     }
 
     loadQuestion();
